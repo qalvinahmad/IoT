@@ -100,7 +100,7 @@ const Hopper = () => {
             )
           );
         }
-      }, 2000); // Durasi 1 detik
+      }, 5000); // Durasi 5 detik
     }
   };
 

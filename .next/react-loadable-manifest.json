@@ -21,36 +21,6 @@
     "id": "../node_modules/@supabase/storage-js/dist/module/lib/helpers.js -> @supabase/node-fetch",
     "files": []
   },
-  "app/housing/air/page.jsx -> ../LottieComponent": {
-    "id": "app/housing/air/page.jsx -> ../LottieComponent",
-    "files": [
-      "static/chunks/_app-pages-browser_src_app_housing_LottieComponent_jsx.js"
-    ]
-  },
-  "app/housing/fan/page.jsx -> ../LottieComponent": {
-    "id": "app/housing/fan/page.jsx -> ../LottieComponent",
-    "files": [
-      "static/chunks/_app-pages-browser_src_app_housing_LottieComponent_jsx.js"
-    ]
-  },
-  "app/housing/hopper/page.jsx -> ../LottieComponent": {
-    "id": "app/housing/hopper/page.jsx -> ../LottieComponent",
-    "files": [
-      "static/chunks/_app-pages-browser_src_app_housing_LottieComponent_jsx.js"
-    ]
-  },
-  "app/housing/lamp/page.jsx -> ../LottieComponent": {
-    "id": "app/housing/lamp/page.jsx -> ../LottieComponent",
-    "files": [
-      "static/chunks/_app-pages-browser_src_app_housing_LottieComponent_jsx.js"
-    ]
-  },
-  "app/housing/light/page.jsx -> ../LottieComponent": {
-    "id": "app/housing/light/page.jsx -> ../LottieComponent",
-    "files": [
-      "static/chunks/_app-pages-browser_src_app_housing_LottieComponent_jsx.js"
-    ]
-  },
   "app/housing/page.jsx -> ./LottieComponent": {
     "id": "app/housing/page.jsx -> ./LottieComponent",
     "files": [

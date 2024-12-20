@@ -319,7 +319,7 @@ const Housing = () => {
             i === index ? { ...d, active: false } : d
           )
         );
-      }, 2000);
+      }, 5000); // Durasi 5 detik
     } catch (error) {
       console.error('Error operating hopper:', error);
       toast.error('Failed to operate servo');
@@ -433,14 +433,6 @@ const Housing = () => {
 </p>
 
 
-  {/* Penjelasan tambahan */}
-  <div className="mt-4 text-sm text-gray-400 dark:text-neutral-300 text-center">
-    {systemStatus === 'active' ? (
-      <p>Sistem berfungsi normal, perangkat terhubung dengan baik.</p>
-    ) : (
-      <p>Perangkat belum mengirimkan data terbaru. Periksa koneksi atau status perangkat.</p>
-    )}
-  </div>
 </div>
 
 
