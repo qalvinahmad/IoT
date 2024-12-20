@@ -1,140 +1,144 @@
 "use client";
 
 import { FloatingDock } from "@/components/ui/floating-dock";
-import { supabase } from "@/lib/supabase";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { createClient } from '@supabase/supabase-js';
 import {
-    IconBulb,
-    IconExchange,
-    IconFilter,
-    IconHome,
-    IconPropeller,
-    IconSettingsSpark,
-    IconTemperatureSun,
-    IconUserScan,
-    IconWind
+  IconBulb,
+  IconExchange,
+  IconFilter,
+  IconHome,
+  IconPropeller,
+  IconSettingsSpark,
+  IconTemperatureSun,
+  IconUserScan,
+  IconWind
 } from "@tabler/icons-react";
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 
-const links = [
+const LottieComponent = dynamic(() => import('../LottieComponent'), { ssr: false });
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const link = [
   { title: "Menu", icon: <IconHome className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing" },
   { title: "Kipas Pendingin", icon: <IconPropeller className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/fan" },
   { title: "Lampu", icon: <IconBulb className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/lamp" },
   { title: "Pakan Otomatis", icon: <IconFilter className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/hopper" },
   { title: "Kipas Exhaust", icon: <IconWind className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/air" },
-  { title: "Lampu Pemanas", icon: <IconTemperatureSun className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/temp" },
+  { title: "Lampu Pemanas", icon: <IconTemperatureSun className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/profile" },
   { title: "Mode Otomatis", icon: <IconSettingsSpark className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/light" },
   { title: "Changelog", icon: <IconExchange className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/changelog" },
   { title: "Profil", icon: <IconUserScan className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/profile" },
 ];
 
-const determineTrendType = (currentStatus, previousStatus) => {
-  if (currentStatus === previousStatus) {
-    return 'stable';
-  } else if ((currentStatus === 'Good' && previousStatus === 'Bad') || 
-             (currentStatus === 'Moderate' && previousStatus === 'Bad')) {
-    return 'improving';
-  } else {
-    return 'deteriorating';
-  }
-};
-
 const Air = () => {
-  const [deviceData, setDeviceData] = useState(null);
-  const [trendType, setTrendType] = useState('');
-  const [lastUpdated, setLastUpdated] = useState('');
-  const [lastBadQuality, setLastBadQuality] = useState('');
-  const [currentStatus, setCurrentStatus] = useState('');
-  const [previousStatus, setPreviousStatus] = useState('');
+  const [device, setDevice] = useState(null);
+  const [temperature, setTemperature] = useState(null);
+  const [humidity, setHumidity] = useState(null);
+  const [mq135Value, setMq135Value] = useState(null);  // State untuk nilai MQ135 (ppm)
 
   useEffect(() => {
-    const fetchDeviceData = async () => {
-      const { data, error } = await supabase
-        .from('air')
-        .select('id, quality_status, last_bad_quality, last_updated, is_active')
-        .eq('id', 1)
-        .single();
-
+    // Fetch device control data
+    const fetchControlData = async () => {
+      const { data, error } = await supabase.from('control').select('*');
+      
       if (error) {
-        console.error("Error fetching device data:", error);
+        toast.error(`Error fetching control data: ${error.message}`);
       } else {
-        setDeviceData(data);
-        setCurrentStatus(data.quality_status);
-        setLastBadQuality(data.last_bad_quality);
-        setLastUpdated(data.last_updated);
-        setPreviousStatus(data.quality_status); // Initialize with current for trend calculation
+        if (data && data.length > 0) {
+          const control = data[0];  // Assuming only one device
+          const lastInactiveDate = new Date(control.timestamp);  // Assuming timestamp is being used to track inactivity
+          const now = new Date();
+
+          let inactiveSince;
+          if (
+            lastInactiveDate.getFullYear() === now.getFullYear() &&
+            lastInactiveDate.getMonth() === now.getMonth() &&
+            lastInactiveDate.getDate() === now.getDate()
+          ) {
+            inactiveSince = lastInactiveDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          } else {
+            inactiveSince = lastInactiveDate.toLocaleDateString();
+          }
+
+          setDevice({
+            id: control.id, 
+            name: `Relay1 (Control ID: ${control.id})`,
+            active: control.relay2,
+            inactiveSince: control.timestamp ? inactiveSince : 'N/A',
+            relay2: control.relay2,
+            icon: <IconPropeller className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+          });
+        }
       }
     };
 
-    fetchDeviceData();
-  }, []);
-
-  useEffect(() => {
-    if (currentStatus && previousStatus) {
-      const trend = determineTrendType(currentStatus, previousStatus);
-      setTrendType(trend);
+    // Fetch temperature, humidity, and MQ135 value data
+    const fetchSensorData = async () => {
+      const { data, error } = await supabase.from('temp').select('*').order('timestamp', { ascending: false }).limit(1);
       
-      const updateAirQuality = async () => {
-        const { data, error } = await supabase
-          .from('air')
-          .update({
-            quality_status: currentStatus,
-            last_updated: new Date(),
-            trend_type: trend
-          })
-          .eq('id', 1);
-
-        if (error) {
-          console.error("Error updating air quality:", error);
-        } else {
-          console.log("Air quality updated:", data);
-          setPreviousStatus(currentStatus); // Update previous status after successful update
-        }
-      };
-
-      updateAirQuality();
-    }
-  }, [currentStatus, previousStatus]);
-
-  const formatDate = (date) => {
-    if (!date) return '';
-    const options = {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+      if (error) {
+        toast.error(`Error fetching sensor data: ${error.message}`);
+      } else {
+        const latestData = data[0];
+        setTemperature(latestData.current_temperature);
+        setHumidity(latestData.humidity);
+      }
     };
 
-    const formattedDate = new Intl.DateTimeFormat('id-ID', options).format(new Date(date));
-    const [day, month, year] = formattedDate.split(', ')[0].split('/');
-    const [time] = formattedDate.split(', ')[1].split(':');
-    return `${time.replace(':', '.').slice(0, 5)}, ${day}-${month}-${year}`;
-  };
+    // Fetch MQ135 value (ammonia ppm)
+    const fetchAmoniaData = async () => {
+      const { data, error } = await supabase.from('temp').select('*').order('timestamp', { ascending: false }).limit(1);
+      
+      if (error) {
+        console.log('Error:', error);
+        toast.error(`Error fetching MQ135 data: ${error.message}`);
+      } else {
+        console.log('Data:', data);  // Log data yang diterima dari Supabase
+        const latestData = data[0];
+        setMq135Value(latestData.mq135_value);  // Set nilai MQ135 (ppm)
+      }
+    };
+    
 
-  let trendDescription;
-  switch (trendType) {
-    case 'improving':
-      trendDescription = "Air quality has been improving over the last week.";
-      break;
-    case 'stable':
-      trendDescription = "Air quality has remained stable over the last week.";
-      break;
-    case 'deteriorating':
-      trendDescription = "Air quality has been deteriorating over the last week.";
-      break;
-    default:
-      trendDescription = "Trend data is unavailable.";
-  }
+    fetchControlData();
+    fetchSensorData();
+    fetchAmoniaData();  // Ambil data MQ135
+  }, []);
+
+  const toggleDevice = async () => {
+    if (!device) return;
+
+    const newStatus = !device.active;
+
+    const { error } = await supabase
+      .from('control')
+      .update({ relay2: newStatus, timestamp: newStatus ? null : new Date() })
+      .eq('id', device.id);  
+
+    if (error) {
+      toast.error(`Error updating relay status: ${error.message}`);
+    } else {
+      setDevice((prevDevice) => ({
+        ...prevDevice,
+        active: newStatus
+      }));
+      toast.success('Exhaust fan status updated');
+    }
+  };
 
   return (
     <div className={cn("rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 w-full flex-1 max-w-7xl mx-auto border border-neutral-200 dark:border-neutral-700 overflow-hidden h-screen")}>
       <main className="flex-1 p-4 md:p-10 bg-white dark:bg-neutral-900 flex flex-col">
-        <h1 className="text-4xl text-center font-bold text-black dark:text-white tracking-tight relative pb-6 z-20">
-          Temperatur{" "}
-          <div className="relative inline-block mx-auto w-max [filter:drop-shadow(0px_1px_3px_rgba(27,_37,_80,_0.14))]">
+        <h1 className="text-4xl relative pb-6 z-20 md:text-md lg:text-md font-bold text-center text-black dark:text-white font-sans tracking-tight">
+          Kipas Exhaust{" "}
+          <div className="relative mx-auto inline-block w-max [filter:drop-shadow(0px_1px_3px_rgba(27,_37,_80,_0.14))]">
             <div className="absolute left-0 top-[1px] bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-pink-500 animate-pulse py-4">
               <span>Automasi</span>
             </div>
@@ -144,38 +148,62 @@ const Air = () => {
           </div>
         </h1>
 
-        <Toaster position="top-right"/>
+        <Toaster position="top-right" />
 
-        {/* Air Quality Card */}
-        <div className="col-span-1 bg-white p-6 rounded-lg border border-neutral-200 transition duration-200 shadow-input hover:shadow-xl dark:shadow-none flex flex-col items-center justify-center mb-4">
-          <h2 className="text-lg font-bold mb-4">Air Quality</h2>
-          <p className="text-2xl font-semibold mb-2">{currentStatus}</p>
-          <p className="text-gray-500 mb-2">Status</p>
-          <p className="text-black text-lg">{deviceData?.is_active ? "Active" : "Inactive"}</p>
+        {/* Statik Device */}
+        <div className="grid grid-cols-2 grid-rows-2 gap-4">
+  {/* Elemen pertama, col-span-2 */}
+  {device && (
+    <div className="col-span-2 flex justify-center items-center relative h-24 bg-blue-200 rounded-lg">
+      <div
+        className={cn(
+          "w-full h-full p-4 rounded-lg flex flex-col items-center border border-neutral-200 transition duration-200 shadow-input hover:shadow-xl dark:shadow-none",
+          device.active ? "bg-gradient-to-br from-gray-100 to-gray-50" : "bg-gray-50"
+        )}
+      >
+        <div className="w-full flex justify-between mb-2 items-center">
+          <Switch
+            id="device-switch-0"
+            checked={device.active}
+            onCheckedChange={toggleDevice}
+          />
         </div>
-
-        {/* Additional Information Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-6 rounded-lg border border-neutral-200 transition duration-200 shadow-input hover:shadow-xl dark:shadow-none flex flex-col items-center">
-            <h3 className="text-lg font-bold mb-2">Last Updated</h3>
-            <p className="text-xl">{formatDate(lastUpdated)}</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg border border-neutral-200 transition duration-200 shadow-input hover:shadow-xl dark:shadow-none flex flex-col items-center">
-            <h3 className="text-lg font-bold mb-2">Last Bad Air Quality</h3>
-            <p className="text-xl">{formatDate(lastBadQuality)}</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg border border-neutral-200 transition duration-200 shadow-input hover:shadow-xl dark:shadow-none flex flex-col items-center">
-            <h3 className="text-lg font-bold mb-2">Trend</h3>
-            <p className="text-xl">{trendDescription}</p>
-          </div>
+        <div className="flex flex-col items-center flex-grow mb-4">
+          {device.icon}
         </div>
+      </div>
+    </div>
+  )}
+
+<div className="row-start-2 col-start-1 flex justify-center items-center relative h-24 bg-gray-50 rounded-lg">
+  <div
+    className={cn(
+      "w-full h-full p-4 rounded-lg flex flex-col items-center border border-neutral-200 transition duration-200 shadow-input hover:shadow-xl dark:shadow-none"
+    )}
+  >
+    <span>Kelembapan: {humidity !== null ? `${humidity}%` : "Loading..."}</span>
+  </div>
+</div>
+
+  {/* Elemen ketiga */}
+  <div className="row-start-2 col-start-2 flex justify-center items-center relative h-24 bg-gray- rounded-lg">
+    <div
+      className={cn(
+        "w-full h-full p-4 rounded-lg flex flex-col items-center border border-neutral-200 transition duration-200 shadow-input hover:shadow-xl dark:shadow-none"
+      )}
+    >
+      <span>Kandungan Amonia : {mq135Value !== null ? `${mq135Value} ppm` : "Loading..."}</span>
+    </div>
+    {/* Tombol X */}
+  </div>
+</div>
+
+
 
         <div className="absolute bottom-0 left-0 right-0 flex justify-center pb-4">
           <FloatingDock
             mobileClassName="translate-y-20"
-            items={links}
+            items={link}
           />
         </div>
       </main>

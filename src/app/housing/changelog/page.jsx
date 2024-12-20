@@ -28,33 +28,45 @@ const deviceMapping = {
 
 const link = [
   {
-    title: "Home",
-    icon: <IconHome className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+    title: "Menu",
+    icon: (
+      <IconHome className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+    ),
     href: "/housing",
   },
   {
-    title: "Fan",
-    icon: <IconPropeller className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+    title: "Kipas Pendingin",
+    icon: (
+      <IconPropeller className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+    ),
     href: "/housing/fan",
   },
   {
-    title: "Lamp",
-    icon: <IconBulb className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
-    href: "/housing/remote",
+    title: "Lampu",
+    icon: (
+      <IconBulb className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+    ),
+    href: "/housing/lamp",
   },
   {
-    title: "Automatic Hopper",
-    icon: <IconFilter className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+    title: "Pakan Otomatis",
+    icon: (
+      <IconFilter className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+    ),
     href: "/housing/hopper",
   },
   {
-    title: "Air Quality",
-    icon: <IconWind className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
-    href: "/housing/profile",
+    title: "Kipas Exhaust",
+    icon: (
+      <IconWind className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+    ),
+    href: "/housing/air",
   },
   {
-    title: "Temperature",
-    icon: <IconTemperatureSun className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+    title: "Lampu Pemanas",
+    icon: (
+      <IconTemperatureSun className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+    ),
     href: "/housing/temp",
   },
   {
@@ -64,18 +76,22 @@ const link = [
     ),
     href: "/housing/light",
   },
-  
   {
     title: "Changelog",
-    icon: <IconExchange className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+    icon: (
+      <IconExchange className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+    ),
     href: "/housing/changelog",
   },
   {
-    title: "Profile",
-    icon: <IconUserScan className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+    title: "Profil",
+    icon: (
+      <IconUserScan className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+    ),
     href: "/housing/profile",
   },
 ];
+
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -89,7 +105,7 @@ const Changelog = () => {
     const fetchActivityLogs = async () => {
       // Fetch activity logs (ensure RLS is configured on login_logs table)
       const { data, error } = await supabase
-        .from('login_logs')
+        .from('logs')
         .select('*')
         .order('timestamp', { ascending: false });
 

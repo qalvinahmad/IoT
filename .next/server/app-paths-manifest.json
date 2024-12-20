@@ -1,8 +1,7 @@
 {
-  "/housing/temp/page": "app/housing/temp/page.js",
-  "/page": "app/page.js",
-  "/housing/page": "app/housing/page.js",
   "/housing/air/page": "app/housing/air/page.js",
+  "/housing/fan/page": "app/housing/fan/page.js",
+  "/housing/page": "app/housing/page.js",
   "/housing/changelog/page": "app/housing/changelog/page.js",
-  "/housing/light/page": "app/housing/light/page.js"
+  "/housing/hopper/page": "app/housing/hopper/page.js"
 }

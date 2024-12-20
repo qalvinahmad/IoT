@@ -5,15 +5,15 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { createClient } from '@supabase/supabase-js';
 import {
-    IconBulb,
-    IconExchange,
-    IconFilter,
-    IconHome,
-    IconPropeller,
-    IconSettingsSpark,
-    IconTemperatureSun,
-    IconUserScan,
-    IconWind
+  IconBulb,
+  IconExchange,
+  IconFilter,
+  IconHome,
+  IconPropeller,
+  IconSettingsSpark,
+  IconTemperatureSun,
+  IconUserScan,
+  IconWind
 } from "@tabler/icons-react";
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
@@ -79,7 +79,7 @@ const Hopper = () => {
       );
       
       // Tampilkan pesan bahwa servo telah menyala
-      toast('Servo telah terbuka dalam 1 detik, pastikan pakan keluar secukupnya!');
+      toast('Servo telah terbuka dalam 2 detik, pastikan pakan keluar secukupnya!');
 
       // Matikan servo setelah 1 detik
       setTimeout(async () => {
@@ -100,7 +100,7 @@ const Hopper = () => {
             )
           );
         }
-      }, 1000); // Durasi 1 detik
+      }, 2000); // Durasi 1 detik
     }
   };
 

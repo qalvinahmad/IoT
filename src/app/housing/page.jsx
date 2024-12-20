@@ -1,4 +1,4 @@
-"use client"; 
+"use client";
 
 import { FloatingDock } from "@/components/ui/floating-dock";
 import GradualSpacing from "@/components/ui/gradual-spacing";
@@ -24,6 +24,7 @@ import { useEffect, useState } from 'react';
 import { Toaster, toast } from 'sonner';
 
 const LottieComponent = dynamic(() => import('./LottieComponent'), { ssr: false });
+
 
 const getAnimationData = (deviceName) => {
   switch (deviceName) {
@@ -111,185 +112,219 @@ const link = [
 ];
 
 const Housing = () => {
+  const router = useRouter();
   const [current_temperature, setCurrentTemperature] = useState(0);
   const [lastUpdated, setLastUpdated] = useState('');
-  const router = useRouter();
-  const [open, setOpen] = useState(true);
+  const [systemStatus, setSystemStatus] = useState('loading');
+  const [lastOnline, setLastOnline] = useState("");
+  const [devices, setDevices] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Inisialisasi Supabase client dengan URL dan anon key yang diambil dari environment variables
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-const fetchSensorData = async () => {
-  try {
-    // Ambil data terbaru dari Supabase berdasarkan timestamp
-    const { data, error } = await supabase
-      .from('temp')  // Ganti dengan nama tabel yang sesuai
-      .select('current_temperature, timestamp')  // Ambil kolom yang relevan
-      .order('timestamp', { ascending: false })  // Urutkan berdasarkan timestamp terbaru
-      .limit(1);  // Ambil hanya 1 baris data terbaru
-
-    if (error) {
-      console.error('Error fetching sensor data:', error.message);
-      return;
-    }
-
-    if (data && data.length > 0) {
-      const latestData = data[0];
-      // Pastikan current_temperature tidak null atau undefined
-      setCurrentTemperature(latestData.current_temperature !== null && latestData.current_temperature !== undefined 
-        ? latestData.current_temperature 
-        : null);
-
-      // Menyimpan waktu pembaruan (timestamp) dalam format waktu lokal
-      setLastUpdated(new Date(latestData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    } else {
-      console.warn('No sensor data found.');
-      setCurrentTemperature(null); // Jika tidak ada data, set ke null
-    }
-  } catch (error) {
-    console.error('Error fetching sensor data:', error.message);
-  }
-};
-
-
-  useEffect(() => {
-    fetchSensorData();
-    const interval = setInterval(() => {
-      fetchSensorData();
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const [systemStatus, setSystemStatus] = useState('loading'); // Status awal
-  const [lastOnline, setLastOnline] = useState("");  // Deklarasi state untuk lastOnline
-
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Ambil data terbaru dari Supabase
-        const { data, error } = await supabase
-          .from('temp')  // Nama tabel yang sesuai
-          .select('system_status, timestamp')  // Ambil status dan timestamp dari tabel
-          .order('timestamp', { ascending: false })  // Urutkan berdasarkan timestamp terbaru
-          .limit(1);  // Ambil hanya 1 baris data terbaru
-      
-        if (error) {
-          throw error;
-        }
-      
-        if (data && data.length > 0) {
-          const latestData = data[0];
-          setSystemStatus(latestData.system_status); // Menyimpan status sistem
-          
-          // Memastikan timestamp valid sebelum mengonversinya
-          if (latestData.timestamp) {
-            const lastOnlineDate = new Date(latestData.timestamp);
-            setLastOnline(lastOnlineDate.toLocaleString()); // Format timestamp menjadi format waktu lokal
-          } else {
-            setLastOnline("Waktu tidak tersedia"); // Jika tidak ada timestamp
-          }
-        } else {
-          setSystemStatus('inactive'); // Jika tidak ada data
-          setLastOnline("Waktu tidak tersedia"); // Jika tidak ada data timestamp
-        }
-      } catch (error) {
-        console.error('Error fetching system status:', error);
-        setSystemStatus('inactive'); // Set ke 'inactive' jika ada error
-        setLastOnline("Waktu tidak tersedia"); // Set waktu tidak tersedia saat error
-      }
-    };
-    
-    fetchData();
-  }, []);  // Menjalankan sekali saat komponen dimount
-
-  // const toggleDevice = (index) => {
-  //   setDevices((prevDevices) => {
-  //     return prevDevices.map((device, i) => {
-  //       if (i === index) {
-  //         return { ...device, active: !device.active }; 
-  //       }
-  //       return device;
-  //     });
-  //   });
-  //   toast('Sensor berubah');
-  // };
-
-  const toggleDevice = async (index) => {
-    const updatedDevices = [...devices];
-    const device = updatedDevices[index];
-    device.active = !device.active; // Toggle status perangkat
-    
-    // Update status perangkat di Supabase
-    await updateDeviceStatus(device.relay, device.active);
-  
-    // Update state untuk menampilkan perubahan
-    setDevices(updatedDevices);
-    toast(`${device.name} telah ${device.active ? 'aktif' : 'nonaktif'}`);
-  };
-  
-  const [devices, setDevices] = useState([
-    { name: "Kipas Pendingin", relay: "relay1", icon: <IconPropeller className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />, active: false },
-    { name: "Lampu Penerangan", relay: "relay2", icon: <IconBulb className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />, active: false },
-    { name: "Pakan", relay: "servo_status", icon: <IconFilter className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />, active: false },
-    { name: "Lampu Pemanas", relay: "relay4", icon: <IconTemperatureSun className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />, active: false },
-    { name: "Kipas Exhaust", relay: "relay3", icon: <IconWind className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />, active: false },
-    { name: "Mode Otomatis", relay: "mode", icon: <IconSettingsSpark className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />, active: false },
-  ]);
-
-  const updateDeviceStatus = async (relay, active) => {
+  // Initialize devices state from Supabase
+  const initializeDevices = async () => {
     try {
       const { data, error } = await supabase
         .from('control')
-        .update({ [relay]: active, timestamp: new Date() })
-        .eq('id', 1); // Sesuaikan dengan ID yang sesuai untuk perangkat
-  
-      if (error) {
-        console.error('Error updating device status:', error.message);
-      } else {
-        console.log('Device status updated:', data);
+        .select('*')
+        .eq('id', 1)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const initialDevices = [
+          {
+            name: "Kipas Pendingin",
+            relay: "relay1",
+            icon: <IconPropeller className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
+            active: data.relay1
+          },
+          {
+            name: "Lampu Penerangan",
+            relay: "relay3",
+            icon: <IconBulb className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
+            active: data.relay3
+          },
+          {
+            name: "Pakan",
+            relay: "servo_status",
+            icon: <IconFilter className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
+            active: data.servo_status
+          },
+          {
+            name: "Lampu Pemanas",
+            relay: "relay4",
+            icon: <IconTemperatureSun className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
+            active: data.relay4
+          },
+          {
+            name: "Kipas Exhaust",
+            relay: "relay2",
+            icon: <IconWind className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
+            active: data.relay2
+          },
+          {
+            name: "Mode Otomatis",
+            relay: "mode",
+            icon: <IconSettingsSpark className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
+            active: data.mode
+          }
+        ];
+        setDevices(initialDevices);
       }
     } catch (error) {
-      console.error('Error updating device status:', error.message);
+      console.error('Error initializing devices:', error);
+      toast.error('Failed to load device states');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const fetchDeviceStatuses = async () => {
+  const fetchSensorData = async () => {
     try {
+      // Ambil data terbaru dari Supabase berdasarkan timestamp
       const { data, error } = await supabase
-        .from('control')  // Tabel tempat status perangkat disimpan
-        .select('relay1, relay2, relay3, relay4, servo_status, mode')  // Kolom-kolom status perangkat
-        .eq('id', 1);  // Misalkan ID perangkat adalah 1
+        .from('temp')  // Ganti dengan nama tabel yang sesuai
+        .select('current_temperature, timestamp')  // Ambil kolom yang relevan
+        .order('timestamp', { ascending: false })  // Urutkan berdasarkan timestamp terbaru
+        .limit(1);  // Ambil hanya 1 baris data terbaru
   
       if (error) {
-        console.error('Error fetching device statuses:', error.message);
+        console.error('Error fetching sensor data:', error.message);
         return;
       }
   
       if (data && data.length > 0) {
         const latestData = data[0];
-        setDevices([
-          { name: "Kipas Pendingin", relay: "relay1", active: latestData.relay1, icon: <IconPropeller />, },
-          { name: "Lampu Penerangan", relay: "relay2", active: latestData.relay2, icon: <IconBulb />,  },
-          { name: "Pakan", relay: "servo_status", active: latestData.servo_status, icon: <IconFilter />, },
-          { name: "Lampu Pemanas", relay: "relay4", active: latestData.relay4, icon: <IconTemperatureSunSun />, },
-          { name: "Kipas Exhaust", relay: "relay3", active: latestData.relay3, icon: <IconWind />, },
-          { name: "Mode Otomatis", relay: "mode", active: latestData.mode, icon: <IconSettingsSpark />, },
-        ]);
+        // Pastikan current_temperature tidak null atau undefined
+        setCurrentTemperature(latestData.current_temperature !== null && latestData.current_temperature !== undefined 
+          ? latestData.current_temperature 
+          : null);
+  
+        // Menyimpan waktu pembaruan (timestamp) dalam format waktu lokal
+        setLastUpdated(new Date(latestData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      } else {
+        console.warn('No sensor data found.');
+        setCurrentTemperature(null); // Jika tidak ada data, set ke null
       }
     } catch (error) {
-      console.error('Error fetching device statuses:', error.message);
+      console.error('Error fetching sensor data:', error.message);
     }
   };
   
-  useEffect(() => {
-    fetchDeviceStatuses();
-  }, []);
   
+  useEffect(() => {
+    fetchSensorData(); // Pastikan data terambil setiap kali komponen dimuat ulang
+    const interval = setInterval(() => {
+        fetchSensorData();
+    }, 10000);
+  
+    return () => clearInterval(interval); // Hapus interval saat komponen dibongkar
+  }, []);
+
+  // Set up real-time subscription
+  useEffect(() => {
+    initializeDevices();
+
+    // Subscribe to changes
+    const channel = supabase
+      .channel('control_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'control',
+          filter: 'id=eq.1'
+        },
+        (payload) => {
+          setDevices(currentDevices => 
+            currentDevices.map(device => ({
+              ...device,
+              active: payload.new[device.relay]
+            }))
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const toggleDevice = async (index) => {
+    const device = devices[index];
+    const newStatus = !device.active;
+
+    try {
+      // Optimistic update
+      setDevices(currentDevices =>
+        currentDevices.map((d, i) =>
+          i === index ? { ...d, active: newStatus } : d
+        )
+      );
+
+      const { error } = await supabase
+        .from('control')
+        .update({ [device.relay]: newStatus })
+        .eq('id', 1);
+
+      if (error) throw error;
+      
+      toast.success(`${device.name} ${newStatus ? 'activated' : 'deactivated'}`);
+    } catch (error) {
+      // Revert on error
+      setDevices(currentDevices =>
+        currentDevices.map((d, i) =>
+          i === index ? { ...d, active: !newStatus } : d
+        )
+      );
+      toast.error(`Failed to update ${device.name}`);
+      console.error('Error toggling device:', error);
+    }
+  };
+
+  const hoppertoggleDevice = async (index) => {
+    const device = devices[index];
+    
+    try {
+      // Activate servo
+      await supabase
+        .from('control')
+        .update({ servo_status: true })
+        .eq('id', 1);
+
+      setDevices(currentDevices =>
+        currentDevices.map((d, i) =>
+          i === index ? { ...d, active: true } : d
+        )
+      );
+
+      toast.success('Servo telah terbuka dalam 2 detik, pastikan pakan keluar secukupnya!');
+
+      // Auto-close after 2 seconds
+      setTimeout(async () => {
+        await supabase
+          .from('control')
+          .update({ servo_status: false })
+          .eq('id', 1);
+
+        setDevices(currentDevices =>
+          currentDevices.map((d, i) =>
+            i === index ? { ...d, active: false } : d
+          )
+        );
+      }, 2000);
+    } catch (error) {
+      console.error('Error operating hopper:', error);
+      toast.error('Failed to operate servo');
+    }
+  };
   
 
   const [temperature, setTemperature] = useState(0);
@@ -325,7 +360,7 @@ const fetchSensorData = async () => {
         <h1 className="flex items-center justify-center text-4xl relative pb-6 z-20 md:text-md lg:text-md font-bold text-black dark:text-white">
           <GradualSpacing
             className="font-display text-md font-bold -tracking-widest text-black dark:text-white md:text-4xl md:leading-[5rem]"
-            text="Kandang Ayam Berbasis"
+            text="Kandang Kucing Berbasis"
           />
           <div className="relative inline-block w-max [filter:drop-shadow(0px_1px_3px_rgba(27,_37,_80,_0.14))] ml-4">
             <div className="absolute left-0 top-[1px] bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-pink-500 animate-pulse py-4">
@@ -392,16 +427,11 @@ const fetchSensorData = async () => {
     Status Sistem IoT
   </h2>
 
-  {/* Status teks utama */}
-  <p
-    className={`text-lg font-medium text-center ${
-      systemStatus === 'active' ? 'text-green-600' : 'text-red-600'
-    }`}
-  >
-    {systemStatus === 'active'
-      ? 'Sistem berjalan dengan baik.'
-      : `Perangkat tidak aktif. Terakhir online: ${lastUpdated}`}
-  </p>
+{/* Status teks utama */}
+<p className="text-lg font-medium text-center text-gray-700">
+  {`Terakhir online: ${lastUpdated}`}
+</p>
+
 
   {/* Penjelasan tambahan */}
   <div className="mt-4 text-sm text-gray-400 dark:text-neutral-300 text-center">
@@ -448,46 +478,47 @@ const fetchSensorData = async () => {
         <Toaster position="top-right" />
 
         <div className="col-span-4 flex flex-1 h-full grid grid-cols-6 gap-4 overflow-hidden pb-6 pl-2 pr-2">
-  {devices.map((device, index) => (
-    <div
-      key={device.name}
-      className={cn(
-        "p-4 rounded-lg flex flex-col items-center border border-neutral-200 transition duration-200 shadow-input hover:shadow-xl dark:shadow-none",
-        device.active ? "bg-gradient-to-br from-gray-100 to-gray-50" : "bg-gray-50"
-      )}
-    >
-      {/* Switch untuk menyalakan/mematikan perangkat */}
-      <div className="w-full flex justify-between mb-4 items-center">
-        <Switch
-          id={`device-switch-${index}`}
-          checked={device.active}  // Pastikan checked mengacu pada nilai boolean
-          onCheckedChange={() => toggleDevice(index)}  // Fungsi toggle
-        />
-      </div>
-
-      {/* Menampilkan ikon perangkat */}
-      <div className="flex flex-col items-center mb-4">
-        {device.icon}
-        {/* Animasi Lottie jika perangkat aktif */}
-        {device.active && (
-          <div className="w-16 h-16 max-h-[200px] overflow-hidden mt-2">
-            <LottieComponent animationPath={getAnimationData(device.name)} />
-          </div>
-        )}
-      </div>
-
-      {/* Informasi perangkat */}
-      <div className="flex flex-col items-center text-center">
-        {/* Menampilkan nama perangkat hanya jika perangkat tidak aktif */}
-        {!device.active && (
-          <p className="text-md text-gray-600 dark:text-white mb-2">
-            {device.name}
-          </p>
-        )}
-
-      </div>
+        {devices.map((device, index) => (
+  <div
+    key={device.name}
+    className={cn(
+      "p-4 rounded-lg flex flex-col items-center border border-neutral-200 transition duration-200 shadow-input hover:shadow-xl dark:shadow-none",
+      device.active ? "bg-gradient-to-br from-gray-100 to-gray-50" : "bg-gray-50"
+    )}
+  >
+    <div className="w-full flex justify-between mb-4 items-center">
+      <Switch
+        id={`device-switch-${index}`}
+        checked={device.active}  // Pastikan checked mengacu pada nilai boolean
+        onCheckedChange={() => {
+          if (device.name === "Pakan") {
+            hoppertoggleDevice(index); // Panggil hoppertoggleDevice untuk Pakan
+          } else {
+            toggleDevice(index);  // Panggil toggleDevice untuk perangkat lainnya
+          }
+        }}  // Fungsi toggle
+      />
     </div>
-  ))}
+
+    <div className="flex flex-col items-center mb-4">
+      {device.icon}
+      {device.active && (
+        <div className="w-16 h-16 max-h-[200px] overflow-hidden mt-2">
+          <LottieComponent animationPath={getAnimationData(device.name)} />
+        </div>
+      )}
+    </div>
+
+    <div className="flex flex-col items-center text-center">
+      {!device.active && (
+        <p className="text-md text-gray-600 dark:text-white mb-2">
+          {device.name}
+        </p>
+      )}
+    </div>
+  </div>
+))}
+
 </div>
 
 

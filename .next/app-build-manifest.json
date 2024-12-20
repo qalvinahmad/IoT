@@ -16,25 +16,45 @@
       "static/chunks/main-app.js",
       "static/chunks/app/housing/page.js"
     ],
+    "/housing/fan/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/housing/fan/page.js"
+    ],
+    "/housing/lamp/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/housing/lamp/page.js"
+    ],
+    "/housing/hopper/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/housing/hopper/page.js"
+    ],
     "/housing/air/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/housing/air/page.js"
     ],
-    "/housing/temp/page": [
+    "/housing/changelog/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/housing/temp/page.js"
+      "static/chunks/app/housing/changelog/page.js"
+    ],
+    "/housing/profile/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/housing/profile/page.js"
     ],
     "/housing/light/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/housing/light/page.js"
     ],
-    "/housing/changelog/page": [
+    "/housing/temp/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/housing/changelog/page.js"
+      "static/chunks/app/housing/temp/page.js"
     ]
   }
 }

@@ -5,15 +5,15 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { createClient } from '@supabase/supabase-js';
 import {
-    IconBulb,
-    IconExchange,
-    IconFilter,
-    IconHome,
-    IconPropeller,
-    IconSettingsSpark,
-    IconTemperatureSun,
-    IconUserScan,
-    IconWind
+  IconBulb,
+  IconExchange,
+  IconFilter,
+  IconHome,
+  IconPropeller,
+  IconSettingsSpark,
+  IconTemperatureSun,
+  IconUserScan,
+  IconWind
 } from "@tabler/icons-react";
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
@@ -30,7 +30,7 @@ const link = [
   { title: "Kipas Pendingin", icon: <IconPropeller className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/fan" },
   { title: "Lampu", icon: <IconBulb className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/lamp" },
   { title: "Pakan Otomatis", icon: <IconFilter className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/hopper" },
-  { title: "Kipas Exhaust", icon: <IconWind className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/profile" },
+  { title: "Kipas Exhaust", icon: <IconWind className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/air" },
   { title: "Lampu Pemanas", icon: <IconTemperatureSun className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/profile" },
   { title: "Mode Otomatis", icon: <IconSettingsSpark className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/light" },
   { title: "Changelog", icon: <IconExchange className="h-full w-full text-neutral-500 dark:text-neutral-300" />, href: "/housing/changelog" },
